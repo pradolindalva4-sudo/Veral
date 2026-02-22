@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>JDP SUPREME v23.0 - RECONEXÃO TOTAL</title>
+    <title>JDP SUPREME - KERNEL v26.0</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
@@ -16,203 +16,296 @@
             --their-bubble: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100dvh; background: var(--deep-black); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; overflow: hidden; }
-
-        /* BOOT */
-        #boot-screen { position: fixed; inset: 0; background: black; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-start { background: none; border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-family: 'Orbitron'; cursor: pointer; margin: 10px; width: 260px; font-weight: bold; }
-
-        /* HEADER */
-        header { height: 70px; background: var(--glass); border-bottom: 2px solid var(--neon-gold); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 100; }
-        .header-info { flex: 1; }
-        .header-info h4 { margin: 0; font-family: 'Orbitron'; font-size: 0.8rem; color: var(--neon-gold); }
-        #p-status { font-size: 0.6rem; color: #666; }
-
-        /* CALL BUTTONS */
-        .call-btn { background: none; border: none; color: var(--neon-gold); cursor: pointer; padding: 8px; }
-
-        /* CHAT */
-        #chat-flow { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg-row { display: flex; width: 100%; flex-direction: column; }
-        .bubble { max-width: 85%; padding: 12px; border-radius: 4px; position: relative; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); }
-        .me .bubble { background: var(--my-bubble); border-right: 3px solid var(--neon-blue); align-self: flex-end; }
-        .them .bubble { background: var(--their-bubble); border-left: 3px solid var(--neon-gold); align-self: flex-start; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
-        /* CALL OVERLAY */
-        #call-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { width: 100px; height: 150px; position: absolute; top: 20px; right: 20px; border: 1px solid var(--neon-gold); z-index: 11; }
-        .call-controls { position: absolute; bottom: 50px; display: flex; gap: 40px; }
-        .hangup { width: 70px; height: 70px; background: #ff0033; border-radius: 50%; border: none; color: white; }
-        .accept { width: 70px; height: 70px; background: #00ff66; border-radius: 50%; border: none; color: white; }
+        body, html {
+            margin: 0; padding: 0; height: 100dvh;
+            background: var(--deep-black);
+            color: #e0e0e0; font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+        }
 
-        /* INPUT */
-        .command-bar { padding: 10px 15px 30px; background: var(--glass); display: flex; align-items: center; gap: 10px; border-top: 1px solid #222; }
-        .input-field { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 4px; padding: 12px; color: white; font-size: 1.1rem; }
-        .action-btn { width: 50px; height: 50px; background: var(--neon-gold); border: none; display: flex; align-items: center; justify-content: center; }
-        .recording { background: #ff0033 !important; animation: pulse 1s infinite; }
+        /* TELA DE BOOT */
+        #boot-screen {
+            position: fixed; inset: 0; background: black; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 4px solid var(--neon-gold);
+        }
+        .logo-jdp { font-family: 'Orbitron'; font-size: 2rem; color: var(--neon-gold); margin-bottom: 30px; text-shadow: 0 0 15px var(--neon-gold); }
+        .btn-start {
+            background: none; border: 2px solid var(--neon-blue); color: var(--neon-blue);
+            padding: 20px; font-family: 'Orbitron'; cursor: pointer;
+            margin: 10px; width: 280px; font-weight: bold; transition: 0.3s;
+        }
+        .btn-start:active { background: var(--neon-blue); color: black; }
+
+        /* INTERFACE PRINCIPAL */
+        .app-container { display: flex; flex-direction: column; height: 100dvh; }
+
+        header {
+            height: 80px; background: var(--glass); border-bottom: 2px solid var(--neon-gold);
+            display: flex; align-items: center; padding: 0 15px; gap: 12px; z-index: 100;
+        }
+
+        .profile-square {
+            width: 55px; height: 55px; border: 2px solid var(--neon-gold);
+            background: #111; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .profile-square img { width: 100%; height: 100%; object-fit: cover; }
+
+        .header-info { flex: 1; }
+        .header-info h4 { margin: 0; font-family: 'Orbitron'; font-size: 0.9rem; color: var(--neon-gold); }
+        #p-status { font-size: 0.7rem; color: #555; font-weight: bold; text-transform: uppercase; }
+
+        /* CALL SYSTEM */
+        #call-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 10000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video { 
+            width: 120px; height: 160px; position: absolute; top: 30px; right: 20px; 
+            border: 2px solid var(--neon-gold); z-index: 11; background: #000; object-fit: cover;
+        }
+        .call-ui { position: absolute; bottom: 60px; display: flex; gap: 40px; z-index: 12; }
+        .c-btn { width: 75px; height: 75px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; }
+        .c-hangup { background: #ff0033; box-shadow: 0 0 20px #ff0033; }
+        .c-accept { background: #00ff66; box-shadow: 0 0 20px #00ff66; }
+
+        /* CHAT AREA */
+        #chat-flow {
+            flex: 1; overflow-y: auto; padding: 20px 15px;
+            display: flex; flex-direction: column; gap: 15px;
+            background: radial-gradient(circle, #0a0a0a 10%, transparent 11%);
+            background-size: 20px 20px;
+        }
+
+        .msg-row { display: flex; width: 100%; flex-direction: column; }
+        .msg-row.me { align-items: flex-end; }
+        .msg-row.them { align-items: flex-start; }
+
+        .bubble {
+            max-width: 85%; padding: 12px; border-radius: 2px;
+            position: relative; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
+            word-wrap: break-word;
+        }
+        .me .bubble { background: var(--my-bubble); border-right: 4px solid var(--neon-blue); }
+        .them .bubble { background: var(--their-bubble); border-left: 4px solid var(--neon-gold); }
+
+        /* MEDIA ELEMENTS */
+        .media-content { max-width: 100%; border: 1px solid var(--neon-gold); margin-top: 5px; display: block; }
+        audio { filter: invert(1) hue-rotate(180deg); width: 220px; margin-top: 8px; }
+
+        /* COMMAND BAR */
+        .command-bar {
+            padding: 10px 15px 35px; background: var(--glass);
+            display: flex; align-items: center; gap: 10px; border-top: 1px solid #222;
+        }
+        .input-field {
+            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #333;
+            padding: 15px; color: white; font-family: 'Rajdhani'; font-size: 1.1rem;
+        }
+        .action-btn {
+            width: 55px; height: 55px; background: var(--neon-gold); border: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .recording-pulse { background: #ff0033 !important; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        img, video { max-width: 100%; border-radius: 4px; }
-        audio { filter: invert(1); width: 200px; }
+        /* DROPDOWN MENU */
+        .menu-drop {
+            position: absolute; top: 70px; right: 15px; background: var(--glass);
+            border: 1px solid var(--neon-gold); display: none; flex-direction: column; z-index: 1000;
+        }
+        .menu-drop button {
+            background: none; border: none; color: white; padding: 15px 25px;
+            text-align: left; font-family: 'Rajdhani'; border-bottom: 1px solid #222;
+        }
     </style>
 </head>
 <body>
 
+    <!-- BOOT -->
     <div id="boot-screen">
-        <h2 style="color:var(--neon-gold); font-family:'Orbitron';">JDP KERNEL v23.0</h2>
-        <button class="btn-start" onclick="start('JOSE')">SR. JOSÉ</button>
-        <button class="btn-start" onclick="start('ESPOSA')">ESPOSA</button>
+        <div class="logo-jdp">JDP INDUSTRIAL</div>
+        <button class="btn-start" onclick="initKernel('JDP-JOSE')">OPERADOR: JOSÉ</button>
+        <button class="btn-start" onclick="initKernel('JDP-ESPOSA')">OPERADOR: ESPOSA</button>
     </div>
 
+    <!-- CALL OVERLAY -->
     <div id="call-overlay">
         <video id="remote-video" autoplay playsinline></video>
         <video id="local-video" autoplay playsinline muted></video>
-        <div class="call-controls">
-            <button class="hangup" onclick="endCall()">FIM</button>
-            <button id="btn-accept" class="accept" onclick="answerCall()">ATENDER</button>
+        <div id="call-status" style="position:absolute; top:100px; font-family:'Orbitron'; color:var(--neon-gold);">CONECTANDO...</div>
+        <div class="call-ui">
+            <button class="c-btn c-hangup" onclick="endCall()">❌</button>
+            <button id="btn-accept" class="c-btn c-accept" onclick="answerCall()">✅</button>
         </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; height: 100dvh;">
+    <div class="app-container">
         <header>
+            <div class="profile-square">
+                <img id="p-img" src="" style="display:none">
+                <span id="p-initial" style="font-family:'Orbitron'; font-weight:bold; color:var(--neon-gold);">JDP</span>
+            </div>
             <div class="header-info">
                 <h4 id="p-name">SISTEMA JDP</h4>
-                <span id="p-status">DESCONECTADO</span>
+                <span id="p-status">OFFLINE</span>
             </div>
-            <button class="call-btn" onclick="makeCall(false)">📞</button>
-            <button class="call-btn" onclick="makeCall(true)">📹</button>
+            <button class="action-btn" style="background:none; color:var(--neon-gold);" onclick="makeCall(false)">📞</button>
+            <button class="action-btn" style="background:none; color:var(--neon-gold);" onclick="makeCall(true)">📹</button>
+            <button class="action-btn" style="background:none; color:var(--neon-gold);" onclick="toggleMenu()">⋮</button>
+            
+            <div class="menu-drop" id="main-menu">
+                <button onclick="triggerFile('bg-input')">Mudar Fundo</button>
+                <button onclick="triggerFile('profile-input')">Mudar Foto</button>
+                <button onclick="clearHistory()" style="color:#ff4444">Limpar Tudo</button>
+            </div>
         </header>
+
+        <input type="file" id="bg-input" hidden accept="image/*" onchange="updateBg(this)">
+        <input type="file" id="profile-input" hidden accept="image/*" onchange="updateProfile(this)">
+        <input type="file" id="media-input" hidden accept="image/*,video/*" onchange="sendMedia(this)">
 
         <div id="chat-flow"></div>
 
         <div class="command-bar">
-            <button class="call-btn" onclick="document.getElementById('file-input').click()">📎</button>
-            <input type="file" id="file-input" hidden onchange="sendFile(this)">
-            <input type="text" id="main-input" class="input-field" placeholder="Mensagem..." oninput="toggleIcons()">
-            <button id="main-action" class="action-btn" onclick="handleAction()">
-                <span id="icon-send" style="display:none">➤</span>
-                <span id="icon-mic">🎤</span>
+            <button class="action-btn" style="background:none; color:var(--neon-gold);" onclick="document.getElementById('media-input').click()">📎</button>
+            <input type="text" id="main-input" class="input-field" placeholder="Escrever..." oninput="uiState()">
+            <button id="master-btn" class="action-btn" onclick="handleAction()">
+                <span id="ico-mic">🎤</span>
+                <span id="ico-send" style="display:none">➤</span>
             </button>
         </div>
     </div>
 
     <script>
-        let peer, conn, myID, partnerID, localStream, currentCall;
-        let mediaRecorder, audioChunks = [];
-        let history = JSON.parse(localStorage.getItem('jdp_v23_db') || '[]');
+        let peer, conn, myID, partnerID, localStream, activeCall;
+        let mediaRecorder, chunks = [];
+        let db = JSON.parse(localStorage.getItem('jdp_v26_db') || '[]');
 
-        function start(user) {
-            myID = 'JDP-' + user;
-            partnerID = (user === 'JOSE') ? 'JDP-ESPOSA' : 'JDP-JOSE';
+        // INICIALIZAÇÃO
+        function initKernel(id) {
+            myID = id;
+            partnerID = (id === 'JDP-JOSE') ? 'JDP-ESPOSA' : 'JDP-JOSE';
             document.getElementById('boot-screen').style.display = 'none';
-            document.getElementById('p-name').innerText = partnerID;
-
-            peer = new Peer(myID);
+            document.getElementById('p-name').innerText = partnerID.replace('JDP-', '');
             
+            peer = new Peer(myID, {
+                config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]}
+            });
+
             peer.on('open', () => {
-                console.log("ID Ativo:", myID);
-                renderHistory();
-                connectToPartner();
+                loadHistory();
+                autoConnect();
             });
 
             peer.on('connection', c => {
                 conn = c;
-                setupConn();
+                bindEvents();
             });
 
             peer.on('call', call => {
-                currentCall = call;
+                activeCall = call;
                 document.getElementById('call-overlay').style.display = 'flex';
-                document.getElementById('btn-accept').style.display = 'block';
+                document.getElementById('btn-accept').style.display = 'flex';
+                document.getElementById('call-status').innerText = "CHAMADA RECEBIDA";
             });
+
+            // Carregar customizações
+            if(localStorage.getItem('jdp_bg')) document.getElementById('chat-flow').style.backgroundImage = `url(${localStorage.getItem('jdp_bg')})`;
+            if(localStorage.getItem('jdp_pic')) {
+                document.getElementById('p-img').src = localStorage.getItem('jdp_pic');
+                document.getElementById('p-img').style.display = 'block';
+                document.getElementById('p-initial').style.display = 'none';
+            }
         }
 
-        function connectToPartner() {
+        function autoConnect() {
             conn = peer.connect(partnerID);
-            setupConn();
-            setTimeout(() => { if(!conn.open) connectToPartner(); }, 5000);
+            bindEvents();
+            setTimeout(() => { if(!conn.open) autoConnect(); }, 5000);
         }
 
-        function setupConn() {
+        function bindEvents() {
             conn.on('open', () => {
                 document.getElementById('p-status').innerText = "ONLINE";
                 document.getElementById('p-status').style.color = "var(--neon-blue)";
             });
             conn.on('data', data => {
-                history.push(data);
-                save();
-                renderSingle(data);
+                pushMsg(data, false);
             });
             conn.on('close', () => {
                 document.getElementById('p-status').innerText = "OFFLINE";
-                connectToPartner();
+                document.getElementById('p-status').style.color = "#555";
             });
         }
 
-        // --- MENSAGENS ---
+        // MENSAGENS E MÍDIA
         function handleAction() {
             const input = document.getElementById('main-input');
             if(input.value.trim()) {
-                sendData('text', input.value);
+                const msg = { type: 'text', val: input.value };
+                pushMsg(msg, true);
                 input.value = '';
-                toggleIcons();
+                uiState();
             } else {
-                recordAudio();
+                toggleAudio();
             }
         }
 
-        function sendData(type, val) {
-            const msg = { sender: myID, type: type, val: val, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
-            history.push(msg);
-            save();
-            renderSingle(msg);
-            if(conn && conn.open) conn.send(msg);
-        }
-
-        function sendFile(input) {
+        function sendMedia(input) {
             const file = input.files[0];
             const reader = new FileReader();
             reader.onload = () => {
                 const type = file.type.startsWith('video') ? 'video' : 'img';
-                sendData(type, reader.result);
+                pushMsg({ type: type, val: reader.result }, true);
             };
             reader.readAsDataURL(file);
         }
 
-        async function recordAudio() {
-            const btn = document.getElementById('main-action');
+        async function toggleAudio() {
+            const btn = document.getElementById('master-btn');
             if(!mediaRecorder || mediaRecorder.state === 'inactive') {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                chunks = [];
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
                 mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/ogg' });
+                    const blob = new Blob(chunks, { type: 'audio/ogg' });
                     const reader = new FileReader();
-                    reader.onload = () => sendData('audio', reader.result);
+                    reader.onload = () => pushMsg({ type: 'audio', val: reader.result }, true);
                     reader.readAsDataURL(blob);
                 };
                 mediaRecorder.start();
-                btn.classList.add('recording');
+                btn.classList.add('recording-pulse');
             } else {
                 mediaRecorder.stop();
-                btn.classList.remove('recording');
+                btn.classList.remove('recording-pulse');
             }
         }
 
-        // --- CHAMADAS ---
+        function pushMsg(data, isMine) {
+            const payload = { ...data, sender: isMine ? myID : partnerID, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
+            db.push(payload);
+            localStorage.setItem('jdp_v26_db', JSON.stringify(db.slice(-50)));
+            render(payload);
+            if(isMine && conn.open) conn.send(payload);
+        }
+
+        // CHAMADAS
         async function makeCall(video) {
             document.getElementById('call-overlay').style.display = 'flex';
             document.getElementById('btn-accept').style.display = 'none';
             localStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: true });
             document.getElementById('local-video').srcObject = localStream;
             
-            const call = peer.call(partnerID, localStream);
-            currentCall = call;
-            call.on('stream', remoteStream => {
-                document.getElementById('remote-video').srcObject = remoteStream;
+            activeCall = peer.call(partnerID, localStream);
+            activeCall.on('stream', remote => {
+                document.getElementById('remote-video').srcObject = remote;
+                document.getElementById('call-status').innerText = "EM CONEXÃO";
             });
         }
 
@@ -220,43 +313,72 @@
             document.getElementById('btn-accept').style.display = 'none';
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             document.getElementById('local-video').srcObject = localStream;
-            currentCall.answer(localStream);
-            currentCall.on('stream', remoteStream => {
-                document.getElementById('remote-video').srcObject = remoteStream;
+            activeCall.answer(localStream);
+            activeCall.on('stream', remote => {
+                document.getElementById('remote-video').srcObject = remote;
+                document.getElementById('call-status').innerText = "EM CONEXÃO";
             });
         }
 
         function endCall() {
-            if(currentCall) currentCall.close();
+            if(activeCall) activeCall.close();
             if(localStream) localStream.getTracks().forEach(t => t.stop());
             document.getElementById('call-overlay').style.display = 'none';
         }
 
-        // --- UI ---
-        function toggleIcons() {
+        // UI
+        function uiState() {
             const hasText = document.getElementById('main-input').value.length > 0;
-            document.getElementById('icon-send').style.display = hasText ? 'block' : 'none';
-            document.getElementById('icon-mic').style.display = hasText ? 'none' : 'block';
+            document.getElementById('ico-mic').style.display = hasText ? 'none' : 'block';
+            document.getElementById('ico-send').style.display = hasText ? 'block' : 'none';
         }
 
-        function renderSingle(msg) {
+        function render(msg) {
             const flow = document.getElementById('chat-flow');
             const side = msg.sender === myID ? 'me' : 'them';
-            let content = msg.val;
-            if(msg.type === 'img') content = `<img src="${msg.val}">`;
-            if(msg.type === 'video') content = `<video src="${msg.val}" controls></video>`;
-            if(msg.type === 'audio') content = `<audio src="${msg.val}" controls></audio>`;
+            let html = msg.val;
+
+            if(msg.type === 'img') html = `<img src="${msg.val}" class="media-content" onclick="window.open(this.src)">`;
+            if(msg.type === 'video') html = `<video src="${msg.val}" controls class="media-content"></video>`;
+            if(msg.type === 'audio') html = `<audio src="${msg.val}" controls></audio>`;
 
             flow.insertAdjacentHTML('beforeend', `
                 <div class="msg-row ${side}">
-                    <div class="bubble">${content}<div style="font-size:0.6rem; opacity:0.5; text-align:right;">${msg.time}</div></div>
+                    <div class="bubble">${html}<div style="font-size:0.6rem; opacity:0.4; text-align:right; margin-top:5px;">${msg.time}</div></div>
                 </div>
             `);
             flow.scrollTop = flow.scrollHeight;
         }
 
-        function save() { localStorage.setItem('jdp_v23_db', JSON.stringify(history.slice(-50))); }
-        function renderHistory() { history.forEach(renderSingle); }
+        function toggleMenu() {
+            const m = document.getElementById('main-menu');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function triggerFile(id) { document.getElementById(id).click(); toggleMenu(); }
+
+        function updateBg(input) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('chat-flow').style.backgroundImage = `url(${e.target.result})`;
+                localStorage.setItem('jdp_bg', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function updateProfile(input) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('p-img').src = e.target.result;
+                document.getElementById('p-img').style.display = 'block';
+                document.getElementById('p-initial').style.display = 'none';
+                localStorage.setItem('jdp_pic', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function clearHistory() { if(confirm("APAGAR TUDO?")) { db=[]; localStorage.removeItem('jdp_v26_db'); location.reload(); } }
+        function loadHistory() { db.forEach(render); }
     </script>
 </body>
 </html>
