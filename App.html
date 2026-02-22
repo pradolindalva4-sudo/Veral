@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JDP SUPREME v22.0 - FINAL KERNEL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-gold: #bf953f;
+            --deep-black: #020202;
+            --glass: rgba(10, 10, 10, 0.98);
+            --my-bubble: linear-gradient(135deg, #004e52 0%, #002a2d 100%);
+            --their-bubble: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body, html { margin: 0; padding: 0; height: 100dvh; background: var(--deep-black); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; overflow: hidden; }
+
+        /* BOOT SCREEN */
+        #boot-screen { position: fixed; inset: 0; background: black; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-start { background: none; border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-family: 'Orbitron'; cursor: pointer; margin: 10px; width: 260px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .btn-start:active { background: var(--neon-gold); color: black; }
+
+        /* HEADER */
+        header { height: 75px; background: var(--glass); border-bottom: 2px solid var(--neon-gold); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 100; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .profile-square { width: 45px; height: 45px; border: 1px solid var(--neon-gold); background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .header-info { flex: 1; }
+        .header-info h4 { margin: 0; font-family: 'Orbitron'; font-size: 0.8rem; color: var(--neon-gold); }
+        
+        /* CALL BUTTONS */
+        .call-actions { display: flex; gap: 15px; margin-right: 10px; }
+        .call-btn { background: none; border: none; color: var(--neon-gold); cursor: pointer; padding: 5px; transition: 0.3s; }
+        .call-btn:active { transform: scale(1.2); color: var(--neon-blue); }
+
+        /* CHAT FLOW */
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 12px; background-image: radial-gradient(#111 1px, transparent 1px); background-size: 20px 20px; }
+        .msg-row { display: flex; width: 100%; flex-direction: column; }
+        .bubble { max-width: 85%; padding: 12px; border-radius: 2px; position: relative; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05); word-wrap: break-word; }
+        .me .bubble { background: var(--my-bubble); border-right: 3px solid var(--neon-blue); align-self: flex-end; }
+        .them .bubble { background: var(--their-bubble); border-left: 3px solid var(--neon-gold); align-self: flex-start; }
+        .status-tag { font-size: 0.6rem; margin-top: 4px; display: flex; align-items: center; gap: 4px; justify-content: flex-end; opacity: 0.6; }
+
+        /* CALL OVERLAY */
+        #call-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        #local-video { width: 100px; height: 140px; border: 1px solid var(--neon-gold); position: absolute; top: 20px; right: 20px; z-index: 10; background: #000; object-fit: cover; }
+        .call-controls { position: absolute; bottom: 60px; display: flex; gap: 40px; z-index: 20; }
+        .hangup-btn { width: 65px; height: 65px; background: #ff0033; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,51,0.5); }
+        .accept-btn { width: 65px; height: 65px; background: #00ff66; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,255,102,0.5); }
+
+        /* INPUT BAR */
+        .command-bar { padding: 10px 15px 35px; background: var(--glass); display: flex; align-items: center; gap: 10px; border-top: 1px solid #222; }
+        .input-field { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 4px; padding: 12px; color: white; font-size: 1.1rem; font-family: 'Rajdhani'; }
+        .action-btn { width: 50px; height: 50px; background: var(--neon-gold); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        video.chat-video { max-width: 100%; border: 1px solid var(--neon-gold); margin-top: 5px; border-radius: 4px; }
+        img.chat-img { max-width: 100%; border: 1px solid var(--neon-gold); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- INTERFACE DE CHAMADA SUPREME -->
+    <div id="call-overlay">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay playsinline muted></video>
+        <div id="call-status-ui" style="position:absolute; top:150px; text-align:center; width:100%; z-index:5;">
+            <h2 id="caller-name" style="color:var(--neon-gold); font-family:'Orbitron'; text-shadow: 0 0 10px black;">CONEXÃO JDP...</h2>
+        </div>
+        <div class="call-controls">
+            <button class="hangup-btn" onclick="endCall()">
+                <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.984.984 0 0 1 0-1.4C4.45 7.21 8.06 5 12 5s7.55 2.21 11.71 6.69c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.53-.11-.7-.29c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+            </button>
+            <button id="btn-accept" class="accept-btn" onclick="acceptCall()">
+                <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1.02 1.02 0 0 0-1.02.24l-2.2 2.2a15.045 15.045 0 0 1-6.59-6.59l2.2-2.2c.28-.28.36-.67.25-1.02A11.36 11.36 0 0 1 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="boot-screen">
+        <div style="font-size: 1.8rem; margin-bottom: 30px; color: var(--neon-gold); font-family: 'Orbitron'; letter-spacing: 5px;">HELENA v22.0</div>
+        <button class="btn-start" onclick="boot('JOSE')">OPERADOR: JOSÉ</button>
+        <button class="btn-start" onclick="boot('ESPOSA')">OPERADOR: ESPOSA</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; height: 100dvh;">
+        <header>
+            <div class="profile-square">
+                <span id="p-initial" style="font-family:'Orbitron'; color:var(--neon-gold); font-weight:bold;">JDP</span>
+            </div>
+            <div class="header-info">
+                <h4 id="p-name">SISTEMA INDUSTRIAL</h4>
+                <span id="p-status" style="font-size:0.6rem; color:#666; font-weight:bold;">AGUARDANDO BOOT...</span>
+            </div>
+            <div class="call-actions">
+                <button class="call-btn" onclick="startCall('voice')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1.02 1.02 0 0 0-1.02.24l-2.2 2.2a15.045 15.045 0 0 1-6.59-6.59l2.2-2.2c.28-.28.36-.67.25-1.02A11.36 11.36 0 0 1 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/></svg>
+                </button>
+                <button class="call-btn" onclick="startCall('video')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <div id="chat-flow"></div>
+
+        <div class="command-bar">
+            <button class="call-btn" onclick="document.getElementById('file-input').click()">
+                <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.31 2.69 6 6 6s6-2.69 6-6V6h-1.5z"/></svg>
+            </button>
+            <input type="file" id="file-input" accept="image/*,video/*" hidden onchange="handleFile(this)">
+            <input type="text" id="main-input" class="input-field" placeholder="Digite seu comando...">
+            <button class="action-btn" onclick="sendText()">
+                <svg width="24" height="24" fill="black" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let client, myID, partnerID, pc;
+        let localStream;
+        let messageHistory = JSON.parse(localStorage.getItem('jdp_v22_final') || '[]');
+
+        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+
+        function boot(user) {
+            myID = 'JDP-' + user;
+            partnerID = (user === 'JOSE') ? 'JDP-ESPOSA' : 'JDP-JOSE';
+            document.getElementById('boot-screen').style.display = 'none';
+            document.getElementById('p-name').innerText = partnerID.replace('JDP-', '');
+            renderHistory();
+            initMQTT();
+            // Vigilante de Sincronização
+            setInterval(syncPending, 3000);
+        }
+
+        function initMQTT() {
+            client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId: 'JDP_ID_' + myID + Math.random() });
+
+            client.on('connect', () => {
+                document.getElementById('p-status').innerText = "ONLINE | KERNEL ATIVO";
+                document.getElementById('p-status').style.color = "var(--neon-blue)";
+                client.subscribe(myID);
+                syncPending();
+            });
+
+            client.on('offline', () => {
+                document.getElementById('p-status').innerText = "MODO OFFLINE | FILA ATIVA";
+                document.getElementById('p-status').style.color = "orange";
+            });
+
+            client.on('message', async (topic, message) => {
+                const data = JSON.parse(message.toString());
+                
+                // Sinalização de Chamada
+                if (data.type === 'CALL_REQUEST') handleIncomingCall(data);
+                if (data.type === 'CALL_ACCEPT') finalizeCall(data);
+                if (data.type === 'CALL_CANDIDATE') pc?.addIceCandidate(new RTCIceCandidate(data.candidate));
+                if (data.type === 'CALL_HANGUP') endCall(false);
+                
+                // Mensagens e Mídia
+                if (data.type === 'CHAT') receiveChat(data);
+                if (data.type === 'ACK') markSent(data.id);
+            });
+        }
+
+        // --- LÓGICA DE FILA WHATSAPP ---
+        function sendText() {
+            const input = document.getElementById('main-input');
+            if (!input.value.trim()) return;
+            pushToQueue('text', input.value);
+            input.value = '';
+        }
+
+        function handleFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const type = file.type.startsWith('video') ? 'video' : 'img';
+                pushToQueue(type, reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function pushToQueue(type, val) {
+            const msg = {
+                id: 'JDP' + Date.now(),
+                sender: myID,
+                type: type,
+                val: val,
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                status: 'pending'
+            };
+            messageHistory.push(msg);
+            save();
+            renderSingle(msg);
+            syncPending();
+        }
+
+        function syncPending() {
+            if (!client?.connected) return;
+            messageHistory.forEach(msg => {
+                if (msg.sender === myID && msg.status === 'pending') {
+                    client.publish(partnerID, JSON.stringify(msg), { qos: 1 });
+                }
+            });
+        }
+
+        // --- LÓGICA DE CHAMADAS ---
+        async function startCall(mode) {
+            document.getElementById('call-overlay').style.display = 'flex';
+            document.getElementById('btn-accept').style.display = 'none';
+            document.getElementById('caller-name').innerText = "ESTABELECENDO CONEXÃO...";
+
+            localStream = await navigator.mediaDevices.getUserMedia({ video: mode === 'video', audio: true });
+            document.getElementById('local-video').srcObject = localStream;
+
+            pc = new RTCPeerConnection(rtcConfig);
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.onicecandidate = e => {
+                if (e.candidate) client.publish(partnerID, JSON.stringify({ type: 'CALL_CANDIDATE', candidate: e.candidate }));
+            };
+
+            pc.ontrack = e => { document.getElementById('remote-video').srcObject = e.streams[0]; };
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            client.publish(partnerID, JSON.stringify({ type: 'CALL_REQUEST', offer: offer, mode: mode }));
+        }
+
+        async function handleIncomingCall(data) {
+            document.getElementById('call-overlay').style.display = 'flex';
+            document.getElementById('btn-accept').style.display = 'flex';
+            document.getElementById('caller-name').innerText = "CHAMADA DE " + data.mode.toUpperCase();
+            
+            pc = new RTCPeerConnection(rtcConfig);
+            pc.onicecandidate = e => {
+                if (e.candidate) client.publish(partnerID, JSON.stringify({ type: 'CALL_CANDIDATE', candidate: e.candidate }));
+            };
+            pc.ontrack = e => { document.getElementById('remote-video').srcObject = e.streams[0]; };
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        }
+
+        async function acceptCall() {
+            document.getElementById('btn-accept').style.display = 'none';
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('local-video').srcObject = localStream;
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            client.publish(partnerID, JSON.stringify({ type: 'CALL_ACCEPT', answer: answer }));
+            document.getElementById('caller-name').innerText = "EM CHAMADA";
+        }
+
+        async function finalizeCall(data) {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            document.getElementById('caller-name').innerText = "EM CHAMADA";
+        }
+
+        function endCall(notify = true) {
+            if (notify) client.publish(partnerID, JSON.stringify({ type: 'CALL_HANGUP' }));
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            if (pc) pc.close();
+            document.getElementById('call-overlay').style.display = 'none';
+        }
+
+        // --- PROCESSAMENTO DE MENSAGENS ---
+        function receiveChat(data) {
+            if (!messageHistory.find(m => m.id === data.id)) {
+                messageHistory.push(data);
+                save();
+                renderSingle(data);
+                client.publish(data.sender, JSON.stringify({ type: 'ACK', id: data.id }));
+            }
+        }
+
+        function markSent(id) {
+            const msg = messageHistory.find(m => m.id === id);
+            if (msg) {
+                msg.status = 'sent';
+                save();
+                const el = document.getElementById('status-' + id);
+                if (el) { el.innerText = '✓✓'; el.style.color = 'var(--neon-blue)'; }
+            }
+        }
+
+        function renderSingle(msg) {
+            const flow = document.getElementById('chat-flow');
+            const side = msg.sender === myID ? 'me' : 'them';
+            let content = msg.val;
+            if (msg.type === 'img') content = `<img src="${msg.val}" class="chat-img">`;
+            if (msg.type === 'video') content = `<video src="${msg.val}" controls class="chat-video"></video>`;
+
+            const html = `
+                <div class="msg-row ${side}">
+                    <div class="bubble">
+                        ${content}
+                        <div class="status-tag">
+                            <span>${msg.time}</span>
+                            ${side === 'me' ? `<span id="status-${msg.id}">${msg.status === 'pending' ? '🕒' : '✓✓'}</span>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            flow.insertAdjacentHTML('beforeend', html);
+            flow.scrollTop = flow.scrollHeight;
+        }
+
+        function save() { localStorage.setItem('jdp_v22_final', JSON.stringify(messageHistory.slice(-50))); }
+        function renderHistory() { messageHistory.forEach(renderSingle); }
+    </script>
+</body>
+</html>
