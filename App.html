@@ -21,7 +21,7 @@
 
         /* BOOT SCREEN */
         #boot-screen { position: fixed; inset: 0; background: black; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-start { background: none; border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-family: 'Orbitron'; cursor: pointer; margin: 10px; width: 260px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .btn-start { background: none; border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-family: 'Orbitron'; cursor: pointer; margin: 10px; width: 260px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
         .btn-start:active { background: var(--neon-gold); color: black; }
 
         /* HEADER */
@@ -48,8 +48,8 @@
         #remote-video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         #local-video { width: 100px; height: 140px; border: 1px solid var(--neon-gold); position: absolute; top: 20px; right: 20px; z-index: 10; background: #000; object-fit: cover; }
         .call-controls { position: absolute; bottom: 60px; display: flex; gap: 40px; z-index: 20; }
-        .hangup-btn { width: 65px; height: 65px; background: #ff0033; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,51,0.5); }
-        .accept-btn { width: 65px; height: 65px; background: #00ff66; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,255,102,0.5); }
+        .hangup-btn { width: 65px; height: 65px; background: #ff0033; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,51,0.5); cursor: pointer; }
+        .accept-btn { width: 65px; height: 65px; background: #00ff66; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,255,102,0.5); cursor: pointer; }
 
         /* INPUT BAR */
         .command-bar { padding: 10px 15px 35px; background: var(--glass); display: flex; align-items: center; gap: 10px; border-top: 1px solid #222; }
@@ -62,7 +62,6 @@
 </head>
 <body>
 
-    <!-- INTERFACE DE CHAMADA SUPREME -->
     <div id="call-overlay">
         <video id="remote-video" autoplay playsinline></video>
         <video id="local-video" autoplay playsinline muted></video>
@@ -73,7 +72,7 @@
             <button class="hangup-btn" onclick="endCall()">
                 <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.984.984 0 0 1 0-1.4C4.45 7.21 8.06 5 12 5s7.55 2.21 11.71 6.69c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.53-.11-.7-.29c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
             </button>
-            <button id="btn-accept" class="accept-btn" onclick="acceptCall()">
+            <button id="btn-accept" class="accept-btn" onclick="acceptCall()" style="display:none;">
                 <svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1.02 1.02 0 0 0-1.02.24l-2.2 2.2a15.045 15.045 0 0 1-6.59-6.59l2.2-2.2c.28-.28.36-.67.25-1.02A11.36 11.36 0 0 1 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/></svg>
             </button>
         </div>
@@ -122,7 +121,6 @@
         let client, myID, partnerID, pc;
         let localStream;
         let messageHistory = JSON.parse(localStorage.getItem('jdp_v22_final') || '[]');
-
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
 
         function boot(user) {
@@ -132,8 +130,7 @@
             document.getElementById('p-name').innerText = partnerID.replace('JDP-', '');
             renderHistory();
             initMQTT();
-            // Vigilante de Sincronização
-            setInterval(syncPending, 3000);
+            setInterval(syncPending, 5000);
         }
 
         function initMQTT() {
@@ -146,27 +143,21 @@
                 syncPending();
             });
 
-            client.on('offline', () => {
-                document.getElementById('p-status').innerText = "MODO OFFLINE | FILA ATIVA";
-                document.getElementById('p-status').style.color = "orange";
-            });
-
             client.on('message', async (topic, message) => {
                 const data = JSON.parse(message.toString());
                 
-                // Sinalização de Chamada
+                // MOTOR DE SINALIZAÇÃO
                 if (data.type === 'CALL_REQUEST') handleIncomingCall(data);
                 if (data.type === 'CALL_ACCEPT') finalizeCall(data);
                 if (data.type === 'CALL_CANDIDATE') pc?.addIceCandidate(new RTCIceCandidate(data.candidate));
                 if (data.type === 'CALL_HANGUP') endCall(false);
                 
-                // Mensagens e Mídia
+                // MOTOR DE CHAT (Ajustado para reconhecer 'CHAT')
                 if (data.type === 'CHAT') receiveChat(data);
                 if (data.type === 'ACK') markSent(data.id);
             });
         }
 
-        // --- LÓGICA DE FILA WHATSAPP ---
         function sendText() {
             const input = document.getElementById('main-input');
             if (!input.value.trim()) return;
@@ -185,11 +176,12 @@
             reader.readAsDataURL(file);
         }
 
-        function pushToQueue(type, val) {
+        function pushToQueue(contentType, val) {
             const msg = {
                 id: 'JDP' + Date.now(),
                 sender: myID,
-                type: type,
+                type: 'CHAT', // Tipo mestre para o motor MQTT
+                contentType: contentType, // Subtipo (text, img, video)
                 val: val,
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 status: 'pending'
@@ -209,27 +201,32 @@
             });
         }
 
-        // --- LÓGICA DE CHAMADAS ---
+        // --- MOTOR DE CHAMADAS ---
         async function startCall(mode) {
             document.getElementById('call-overlay').style.display = 'flex';
             document.getElementById('btn-accept').style.display = 'none';
             document.getElementById('caller-name').innerText = "ESTABELECENDO CONEXÃO...";
 
-            localStream = await navigator.mediaDevices.getUserMedia({ video: mode === 'video', audio: true });
-            document.getElementById('local-video').srcObject = localStream;
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: mode === 'video', audio: true });
+                document.getElementById('local-video').srcObject = localStream;
 
-            pc = new RTCPeerConnection(rtcConfig);
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+                pc = new RTCPeerConnection(rtcConfig);
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-            pc.onicecandidate = e => {
-                if (e.candidate) client.publish(partnerID, JSON.stringify({ type: 'CALL_CANDIDATE', candidate: e.candidate }));
-            };
+                pc.onicecandidate = e => {
+                    if (e.candidate) client.publish(partnerID, JSON.stringify({ type: 'CALL_CANDIDATE', candidate: e.candidate }));
+                };
 
-            pc.ontrack = e => { document.getElementById('remote-video').srcObject = e.streams[0]; };
+                pc.ontrack = e => { document.getElementById('remote-video').srcObject = e.streams[0]; };
 
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            client.publish(partnerID, JSON.stringify({ type: 'CALL_REQUEST', offer: offer, mode: mode }));
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                client.publish(partnerID, JSON.stringify({ type: 'CALL_REQUEST', offer: offer, mode: mode }));
+            } catch (e) {
+                alert("Erro ao acessar câmera/microfone");
+                endCall();
+            }
         }
 
         async function handleIncomingCall(data) {
@@ -247,14 +244,18 @@
 
         async function acceptCall() {
             document.getElementById('btn-accept').style.display = 'none';
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            document.getElementById('local-video').srcObject = localStream;
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            client.publish(partnerID, JSON.stringify({ type: 'CALL_ACCEPT', answer: answer }));
-            document.getElementById('caller-name').innerText = "EM CHAMADA";
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                client.publish(partnerID, JSON.stringify({ type: 'CALL_ACCEPT', answer: answer }));
+                document.getElementById('caller-name').innerText = "EM CHAMADA";
+            } catch (e) {
+                endCall();
+            }
         }
 
         async function finalizeCall(data) {
@@ -263,13 +264,15 @@
         }
 
         function endCall(notify = true) {
-            if (notify) client.publish(partnerID, JSON.stringify({ type: 'CALL_HANGUP' }));
+            if (notify && client) client.publish(partnerID, JSON.stringify({ type: 'CALL_HANGUP' }));
             if (localStream) localStream.getTracks().forEach(t => t.stop());
             if (pc) pc.close();
             document.getElementById('call-overlay').style.display = 'none';
+            document.getElementById('remote-video').srcObject = null;
+            document.getElementById('local-video').srcObject = null;
         }
 
-        // --- PROCESSAMENTO DE MENSAGENS ---
+        // --- MOTOR DE MENSAGENS ---
         function receiveChat(data) {
             if (!messageHistory.find(m => m.id === data.id)) {
                 messageHistory.push(data);
@@ -293,8 +296,10 @@
             const flow = document.getElementById('chat-flow');
             const side = msg.sender === myID ? 'me' : 'them';
             let content = msg.val;
-            if (msg.type === 'img') content = `<img src="${msg.val}" class="chat-img">`;
-            if (msg.type === 'video') content = `<video src="${msg.val}" controls class="chat-video"></video>`;
+            
+            // Verifica o contentType para renderizar corretamente
+            if (msg.contentType === 'img') content = `<img src="${msg.val}" class="chat-img">`;
+            if (msg.contentType === 'video') content = `<video src="${msg.val}" controls class="chat-video"></video>`;
 
             const html = `
                 <div class="msg-row ${side}">
@@ -311,7 +316,10 @@
         }
 
         function save() { localStorage.setItem('jdp_v22_final', JSON.stringify(messageHistory.slice(-50))); }
-        function renderHistory() { messageHistory.forEach(renderSingle); }
+        function renderHistory() { 
+            document.getElementById('chat-flow').innerHTML = '';
+            messageHistory.forEach(renderSingle); 
+        }
     </script>
 </body>
 </html>
